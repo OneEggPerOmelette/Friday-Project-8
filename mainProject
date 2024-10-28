@@ -1,0 +1,92 @@
+import sqlite3
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+
+# Set password for accessing the feedback
+PASSWORD = "YESIMREAL"
+
+# Make function to create the database and table
+def create_db():
+    conn = sqlite3.connect('customer_feedback.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        feedback TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Make the function to insert feedback
+def insert_feedback(name, email, feedback):
+    conn = sqlite3.connect('customer_feedback.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO feedback (customer_name, email, feedback)
+    VALUES (?, ?, ?)
+    ''', (name, email, feedback))
+    conn.commit()
+    conn.close()
+    messagebox.showinfo("Success", "Feedback submitted successfully!")
+
+# Make function to handle the submit button click
+def submit_feedback():
+    name = name_entry.get()
+    email = email_entry.get()
+    feedback = feedback_entry.get("1.0", tk.END).strip()
+
+    if not name or not email or not feedback:
+        messagebox.showwarning("Input Error", "Please fill out all fields.")
+        return
+    insert_feedback(name, email, feedback)
+
+# Create function to get and display feedback in the console
+def console_print_feedback():
+    user_password = input("Enter the password to view feedback: ")
+
+    if user_password == PASSWORD:
+        conn = sqlite3.connect('customer_feedback.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM feedback')
+        rows = cursor.fetchall()
+        conn.close()
+
+        print("\nCustomer Feedback:")
+        for row in rows:
+            print(f"ID: {row[0]}, Name: {row[1]}, Email: {row[2]}, Feedback: {row[3]}, Date: {row[4]}\n")
+    else:
+        print("Access Denied: Incorrect password.")
+
+# Set up the application
+app = tk.Tk()
+app.title("Customer Feedback Form")
+
+# Create the input fields
+tk.Label(app, text="Name:").pack()
+name_entry = tk.Entry(app)
+name_entry.pack()
+
+tk.Label(app, text="Email:").pack()
+email_entry = tk.Entry(app)
+email_entry.pack()
+
+tk.Label(app, text="Feedback:").pack()
+feedback_entry = tk.Text(app, height=5, width=40)
+feedback_entry.pack()
+
+# Create a submit button
+submit_button = tk.Button(app, text="Submit Feedback", command=submit_feedback)
+submit_button.pack(pady=5)
+
+# Create the database and table
+create_db()
+
+# Prompt for password immediately after launching the app
+console_print_feedback()
+
+# Start the application
+app.mainloop()
